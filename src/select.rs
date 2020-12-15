@@ -133,20 +133,20 @@ impl SelectorParser {
     }
 
     fn parse_one(&mut self) -> Result<OneSelector, String> {
-        let name =
+        let (name, quoted) =
             if self.cur() == Some('"') {
                 self.bump();
-                self.parse_quoted_name()?
+                (self.parse_quoted_name()?, true)
             } else {
-                self.parse_name()?
+                (self.parse_name()?, false)
             };
         Ok(if self.cur() == Some('[') {
             let idx = self.parse_index()?;
             OneSelector::IndexedName(name, idx)
         } else {
             match FromStr::from_str(&name) {
-                Err(_) => OneSelector::IndexedName(name, 0),
-                Ok(idx) => OneSelector::Index(idx),
+                Ok(idx) if !quoted => OneSelector::Index(idx),
+                _ => OneSelector::IndexedName(name, 0),
             }
         })
     }
